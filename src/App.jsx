@@ -25,15 +25,14 @@ function App() {
     setNotification({ message, type });
   };
 
-  const closeNotification = () => {
+  const closeNotification = useCallback(() => {
     setNotification(null);
-  };
+  }, []);
 
   // Load expenses and totals from backend
   const loadExpensesData = useCallback(async (categoryToFetch = selectedCategory) => {
     setIsLoading(true);
     try {
-      // 1. Fetch filtered list and category total
       const [listResult, totalResult, allListResult, grandTotalResult] = await Promise.all([
         expenseApi.getExpenses(categoryToFetch),
         expenseApi.getTotalExpenses(categoryToFetch),
@@ -41,16 +40,17 @@ function App() {
         expenseApi.getTotalExpenses('All'),
       ]);
 
-      setExpenses(listResult || []);
+      setExpenses(Array.isArray(listResult) ? listResult : []);
       setTotalData(totalResult || { category: categoryToFetch, total: 0, count: 0 });
-      setAllExpenses(allListResult || []);
+      setAllExpenses(Array.isArray(allListResult) ? allListResult : []);
       setGrandTotalData(grandTotalResult || { category: 'All', total: 0, count: 0 });
     } catch (err) {
       console.error('Failed to load expenses:', err);
-      showNotification(
-        'Could not connect to backend server. Make sure Spring Boot is running on port 8080.',
-        'error'
-      );
+      const errorMsg =
+        err.response?.data?.message ||
+        err.message ||
+        'Could not connect to backend server. Make sure the Spring Boot service is healthy and online.';
+      showNotification(errorMsg, 'error');
     } finally {
       setIsLoading(false);
     }

@@ -55,13 +55,15 @@ const ExpenseTable = ({
     setExpenseToDelete(null);
   };
 
+  const safeExpenses = Array.isArray(expenses) ? expenses : [];
+
   return (
     <div className="expense-table-container glass-panel">
       <div className="table-header-bar">
         <div className="table-title-group">
           <h2 className="table-title">Expense Records</h2>
           <span className="table-count-badge">
-            {expenses.length} {expenses.length === 1 ? 'entry' : 'entries'}
+            {safeExpenses.length} {safeExpenses.length === 1 ? 'entry' : 'entries'}
           </span>
         </div>
       </div>
@@ -71,7 +73,7 @@ const ExpenseTable = ({
           <div className="loading-spinner"></div>
           <p className="loading-text">Loading expenses...</p>
         </div>
-      ) : expenses.length === 0 ? (
+      ) : safeExpenses.length === 0 ? (
         <div className="table-empty-state">
           <div className="empty-state-icon">
             <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
@@ -99,7 +101,7 @@ const ExpenseTable = ({
               </tr>
             </thead>
             <tbody>
-              {expenses.map((expense) => {
+              {safeExpenses.map((expense) => {
                 const meta = CATEGORY_META[expense.category] || { icon: '🏷️', badgeClass: 'badge-other' };
                 const isCurrentlyEditing = activeEditId === expense.id;
 

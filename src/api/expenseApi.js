@@ -1,20 +1,37 @@
 import axios from 'axios';
 
-// Base API client configured for Spring Boot backend (port 8081)
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8081/api';
+// Get and sanitize the API base URL
+const sanitizeBaseUrl = (rawUrl) => {
+  let url = (rawUrl || 'http://localhost:8081/api').trim();
+  
+  // Ensure protocol is present
+  if (!url.startsWith('http://') && !url.startsWith('https://')) {
+    url = 'https://' + url;
+  }
+  
+  // Remove any trailing slashes
+  url = url.replace(/\/+$/, '');
+  
+  // Ensure it ends with /api
+  if (!url.endsWith('/api')) {
+    url = url + '/api';
+  }
+  
+  return url;
+};
+
+const API_BASE_URL = sanitizeBaseUrl(import.meta.env.VITE_API_BASE_URL);
 
 const apiClient = axios.create({
   baseURL: API_BASE_URL,
   headers: {
     'Content-Type': 'application/json',
   },
-  timeout: 10000,
+  timeout: 15000,
 });
 
 /**
  * Fetch expenses, optionally filtered by category.
- * @param {string} [category] - Optional category filter (e.g. 'Food', 'Travel', 'Shopping', 'Other', or 'All')
- * @returns {Promise<Array>} List of expenses
  */
 export const getExpenses = async (category) => {
   const params = {};
@@ -22,13 +39,15 @@ export const getExpenses = async (category) => {
     params.category = category;
   }
   const response = await apiClient.get('/expenses', { params });
+  // Ensure the response is actually an array and not an HTML error string
+  if (!Array.isArray(response.data)) {
+    throw new Error('Invalid server response format. Expected an array of expenses.');
+  }
   return response.data;
 };
 
 /**
  * Fetch a single expense by ID.
- * @param {string} id - Expense ID
- * @returns {Promise<Object>} Expense item
  */
 export const getExpenseById = async (id) => {
   const response = await apiClient.get(`/expenses/${id}`);
@@ -37,8 +56,6 @@ export const getExpenseById = async (id) => {
 
 /**
  * Create a new expense.
- * @param {Object} expenseData - { title, amount, category, date }
- * @returns {Promise<Object>} Created expense
  */
 export const createExpense = async (expenseData) => {
   const response = await apiClient.post('/expenses', expenseData);
@@ -47,9 +64,6 @@ export const createExpense = async (expenseData) => {
 
 /**
  * Update an existing expense by ID.
- * @param {string} id - Expense ID
- * @param {Object} expenseData - { title, amount, category, date }
- * @returns {Promise<Object>} Updated expense
  */
 export const updateExpense = async (id, expenseData) => {
   const response = await apiClient.put(`/expenses/${id}`, expenseData);
@@ -58,8 +72,6 @@ export const updateExpense = async (id, expenseData) => {
 
 /**
  * Delete an expense by ID.
- * @param {string} id - Expense ID
- * @returns {Promise<Object>} Deletion confirmation
  */
 export const deleteExpense = async (id) => {
   const response = await apiClient.delete(`/expenses/${id}`);
@@ -68,8 +80,6 @@ export const deleteExpense = async (id) => {
 
 /**
  * Fetch total spent, optionally filtered by category.
- * @param {string} [category] - Optional category filter
- * @returns {Promise<Object>} { category, total, count }
  */
 export const getTotalExpenses = async (category) => {
   const params = {};
@@ -77,6 +87,9 @@ export const getTotalExpenses = async (category) => {
     params.category = category;
   }
   const response = await apiClient.get('/expenses/total', { params });
+  if (typeof response.data !== 'object' || response.data === null) {
+    throw new Error('Invalid total response format.');
+  }
   return response.data;
 };
 

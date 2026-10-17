@@ -9,10 +9,12 @@ const CATEGORIES = [
 ];
 
 const CategoryBreakdown = ({ allExpenses, selectedCategory, onSelectCategory }) => {
+  const safeExpenses = Array.isArray(allExpenses) ? allExpenses : [];
+
   // Compute totals per category from all expenses
   const categoryStats = CATEGORIES.map((cat) => {
-    const matchingExpenses = allExpenses.filter(
-      (e) => e.category && e.category.toLowerCase() === cat.name.toLowerCase()
+    const matchingExpenses = safeExpenses.filter(
+      (e) => e && e.category && e.category.toLowerCase() === cat.name.toLowerCase()
     );
     const sum = matchingExpenses.reduce((acc, curr) => acc + (Number(curr.amount) || 0), 0);
     return {
